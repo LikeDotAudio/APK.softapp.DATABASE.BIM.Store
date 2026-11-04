@@ -1,0 +1,12 @@
+{
+  "id": "BIM_Store",
+  "name": "BIM Store",
+  "icon": "🏬",
+  "group": "Design",
+  "subGroup": "Hardware & Devices",
+  "kind": "web",
+  "class": "execution",
+  "description": "BIM STORE: the device library as a web store. Departments, a featured shelf and every maker on the front; a faceted catalogue (department, maker, connector, rack height, data stage, photos) with grid/list, sort and pages; product pages with the front panel drawn in mm, specs (mm, kg, W, BTU/hr), grouped ports, manuals, IFC4/JSON downloads and an Edit in Device Editor link. Reads DATABASE.server.BIM at /api/bim (override with ?api=<url>). No prices: the library keeps none.",
+  "autostart": false,
+  "app": "APK:Softapps/DATABASE/DATABASE.BIM.Store/index.html"
+}

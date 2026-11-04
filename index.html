@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Part of the APK.audio project — http://APK.audio — made by Anthony Kuzub -->
+<!-- MIT Licence. Free, for everyone, for ever. Full text in LICENSE at the root. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BIM Store</title>
+  <meta name="description" content="A store-front over the APK.audio BIM device library: every device type, its front panel in mm, ports, IFC4 and JSON downloads.">
+  <link rel="stylesheet" href="./css/store.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/"><span class="logo">▣</span><span>BIM <b>Store</b></span></a>
+    <form id="site-search" class="site-search" role="search">
+      <input id="site-q" type="search" placeholder="Search the device library…" aria-label="Search the device library" autocomplete="off">
+      <button aria-label="Search">⌕</button>
+    </form>
+    <nav class="nav">
+      <a href="#/" data-nav="home">Departments</a>
+      <a href="#/catalog" data-nav="catalog">Catalogue</a>
+      <a href="#/makers" data-nav="makers">Makers</a>
+    </nav>
+    <span id="api-pill" class="pill" data-state="kinda" title="Connecting to the library">…</span>
+  </header>
+
+  <div id="app" class="page" aria-live="polite"></div>
+
+  <dialog id="json-dialog" class="json-dialog">
+    <form method="dialog">
+      <h2>Edit part JSON</h2>
+      <p class="small dim">Saved with <code>PUT /api/bim/parts/&lt;maker&gt;/&lt;model&gt;</code>; the server validates it and marks it <code>edited</code>. For ports and panels, the Device Editor is kinder.</p>
+      <textarea spellcheck="false" aria-label="Part JSON"></textarea>
+      <p class="msg" data-dlg-msg></p>
+      <div class="row"><button class="btn" data-dlg-cancel>Cancel</button><button class="btn primary" data-dlg-save>Save to library</button></div>
+    </form>
+  </dialog>
+
+  <footer class="foot">
+    <span>APK.audio BIM library · <code>apk.bim.part/1</code> · dimensions in mm, weight kg, power W · no prices, ever</span>
+  </footer>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
