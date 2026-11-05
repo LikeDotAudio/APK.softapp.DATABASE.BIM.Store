@@ -367,6 +367,7 @@ async function renderPart(live) {
         <div class="badges">${part.category ? `<span class="badge cat">${h(part.category)}</span>` : ''}${part.class ? `<span class="badge">${h(part.class)}</span>` : ''}${part.stage === 'stub' ? '<span class="badge stub" title="Name only: no dimensions or ports yet">stub</span>' : '<span class="badge good">fully described</span>'}</div>
         ${part.description ? `<p class="lede">${h(part.description)}</p>` : ''}
         ${facts.length ? `<dl class="facts">${facts.map(([k, v]) => `<div><dt>${h(k)}</dt><dd>${h(v)}</dd></div>`).join('')}</dl>` : ''}
+        <div class="live" data-live hidden></div>
         <div class="actions">
           <a class="btn primary" href="${h(api.url(id, '.ifc'))}" data-download="${h(id.replace('/', '_'))}.ifc">⬇ Download IFC</a>
           <a class="btn" href="${h(api.url(id, '.json'))}" data-download="${h(id.replace('/', '_'))}.bim.json">⬇ Download JSON</a>
@@ -403,6 +404,7 @@ async function renderPart(live) {
     <div data-more-shelf></div>`;
   app._part = part;
   window.scrollTo({ top: 0, behavior: 'instant' });
+  showLive(id, part, live);
 
   // the maker card and the shelf follow; the page is already readable
   const [maker, more] = await Promise.all([
@@ -546,3 +548,30 @@ async function deletePart(part) {
 }
 
 boot();
+
+/* ON THE BENCH — connected, discovered, known: go for its default GUI.
+   The library knows which bench devices are this part and which panel each
+   presents on the bus (/api/bim/parts/<id>/live); "Open its panel" asks the OS
+   shell for that device's console through the shared picker module. */
+async function showLive(id, part, live) {
+  let devices = [];
+  let lib = null;
+  try {
+    lib = await import(`${api.base}/ui/picker.js`);
+    devices = await lib.liveDevices(id);
+  } catch (_) { return; }
+  if (!live() || !devices.length) return;
+  const box = app.querySelector('[data-live]');
+  if (!box) return;
+  const inShell = window.top !== window;
+  box.hidden = false;
+  box.innerHTML = `<h3>On the bench <span class="dim">(${devices.length})</span></h3>
+    <ul>${devices.map((d, i) => `<li class="${h(d.state)}"><span class="dot" title="${h(d.state)}"></span>
+      <span class="who">${h(d.name)}${d.serial ? ` <span class="dim small">#${h(d.serial)}</span>` : ''}<br><span class="dim small">${h(d.address || d.resource || '')}${d.state !== 'online' ? ` · ${h(d.state)}` : ''}</span></span>
+      ${d.panel ? (inShell ? `<button class="btn ${d.state === 'online' ? 'primary' : ''}" data-open-gui="${i}" title="Its default GUI: the panel it presents (${h((d.panel.at || []).join(', '))})">▶ Open its panel</button>`
+        : `<span class="small dim" title="Open this store inside the OS to open it">panel: ${h(d.panel.key)}</span>`) : '<span class="small dim">no panel yet</span>'}</li>`).join('')}</ul>`;
+  box.querySelectorAll('[data-open-gui]').forEach((b) => b.addEventListener('click', () => {
+    const d = devices[Number(b.dataset.openGui)];
+    if (!lib.openDefaultGui(d, d.name)) b.textContent = 'Open the store inside the OS to open panels';
+  }));
+}

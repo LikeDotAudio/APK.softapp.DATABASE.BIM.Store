@@ -317,3 +317,13 @@ table { border-collapse: collapse; width: 100%; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .list .fig { width: 120px; }
 }
+
+/* On the bench: this part's live devices and their default GUI */
+.live{margin:14px 0;padding:10px 12px;border:1px solid #1f6f4a;border-radius:8px;background:rgba(16,185,129,.06)}
+.live h3{margin:0 0 6px;font-size:13px}
+.live ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.live li{display:flex;align-items:center;gap:10px}
+.live .who{flex:1;min-width:0}
+.live .dot{width:9px;height:9px;border-radius:50%;background:#6b7280;flex:none}
+.live li.online .dot{background:#10b981;box-shadow:0 0 6px #10b981}
+.live li.graveyard .dot{background:#f59e0b}
