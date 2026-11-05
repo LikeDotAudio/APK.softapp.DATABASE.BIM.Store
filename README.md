@@ -56,3 +56,7 @@ Principles, architecture and delivery: [Documentation/README.md](Documentation/R
 A product page whose part has devices on the bench lists them (online, gone dark) from
 `/api/bim/parts/<id>/live`, each with **▶ Open its panel**: the default GUI the device presents on the bus,
 opened in the OS shell through the shared picker module's `openDefaultGui`. Outside the OS it names the panel.
+
+<!-- wiki:smoke -->
+**Smoke test** — ✅ PASS 2/2 since 2026-11-04 21:31 EST — [results](Documentation/%F0%9F%A7%A9Manual%20and%20Artifacts/SMOKE.md)
+<!-- /wiki:smoke -->
