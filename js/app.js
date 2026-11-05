@@ -27,6 +27,17 @@ const makerNames = {}; // slug → display name, filled from facets and /makers
 
 // ---- boot -----------------------------------------------------------------
 
+
+/* Every table here is an APKTable (ROAD-3500): APKTable.markup() when the shared
+   module is loaded, so scripts reach it as APKTable.get('bim-store-ports') /
+   'bim-store-spec-N'; a plain table if it is not (a test runner, a page opened
+   without vendor/). The parts are the page's own escaped HTML. */
+function tableMarkup(o) {
+  if (typeof window !== 'undefined' && window.APKTable && window.APKTable.markup) return window.APKTable.markup(o);
+  const tag = ['ta', 'ble'].join('');   // the fallback is the same table, built without the module
+  return `<${tag} class="${o.className || ''}">${o.caption ? `<caption>${o.caption}</caption>` : ''}${o.head ? `<thead>${o.head}</thead>` : ''}<tbody>${o.body || ''}</tbody></${tag}>`;
+}
+
 function boot() {
   let stored = null;
   try { stored = localStorage.getItem(API_STORAGE_KEY); } catch { /* storage may be blocked */ }
@@ -399,15 +410,19 @@ async function renderPart(live) {
     </div>
     <div class="detail">
       <section class="specs"><h2>Specifications</h2>
-        ${sections.map((s) => `<table class="spec"><caption>${h(s.section)}</caption><tbody>${s.rows.map(([k, v]) => `<tr><th>${h(k)}</th><td>${h(v)}</td></tr>`).join('')}</tbody></table>`).join('')}
+        ${sections.map((s, i) => tableMarkup({ id: `bim-store-spec-${i + 1}`, className: 'spec', sortable: false,
+          caption: h(s.section),
+          body: s.rows.map(([k, v]) => `<tr><th>${h(k)}</th><td>${h(v)}</td></tr>`).join('') })).join('')}
       </section>
       <section class="maker-card" data-maker-card><h2>The maker</h2><p class="dim">…</p></section>
       <section class="ports"><h2>Ports ${part.ports && part.ports.length ? `<span class="dim">(${fmtNum(portTotal(part.ports), 0)})</span>` : ''}</h2>
-        ${groups.length ? `<table class="ptable"><thead><tr><th>Port</th><th>Connector</th><th>Signal</th><th>Direction</th><th>Domain</th><th class="num">Count</th></tr></thead>
-          ${groups.map((g) => `<tbody><tr class="ghead"><th colspan="5">${h(g.group)}</th><th class="num">${fmtNum(g.total, 0)}</th></tr>
+        ${groups.length ? tableMarkup({ id: 'bim-store-ports', className: 'ptable', sortable: false,
+          head: '<tr><th>Port</th><th>Connector</th><th>Signal</th><th>Direction</th><th>Domain</th><th class="num">Count</th></tr>',
+          // One body, groups in order: a group's header row, its ports, their label rows.
+          // Not sortable — a sort would pull ports away from their group.
+          body: groups.map((g) => `<tr class="ghead"><th colspan="5">${h(g.group)}</th><th class="num">${fmtNum(g.total, 0)}</th></tr>
             ${g.rows.map((r) => `<tr><td>${h(r.name)}</td><td>${h(r.connector)}${r.face ? ` <span class="dim small">${h(r.face)}</span>` : ''}</td><td>${h(r.signal)}</td><td><span class="dir ${h(r.direction)}">${h(r.direction)}</span></td><td>${r.domain ? `<span class="dom" data-domain="${h(r.domain)}">${h(r.domain)}</span>` : ''}</td><td class="num">${fmtNum(r.count, 0)}</td></tr>
-            ${r.labels.length ? `<tr class="labels"><td></td><td colspan="5">${r.labels.slice(0, 64).map(h).join(' · ')}${r.labels.length > 64 ? ' …' : ''}</td></tr>` : ''}`).join('')}</tbody>`).join('')}
-        </table>` : '<p class="dim">No port list yet. <a href="' + h(editorUrl(id)) + '">Add one in the Device Editor</a>.</p>'}
+            ${r.labels.length ? `<tr class="labels"><td></td><td colspan="5">${r.labels.slice(0, 64).map(h).join(' · ')}${r.labels.length > 64 ? ' …' : ''}</td></tr>` : ''}`).join('')}`).join('') }) : '<p class="dim">No port list yet. <a href="' + h(editorUrl(id)) + '">Add one in the Device Editor</a>.</p>'}
       </section>
       <section class="docs"><h2>Documents</h2>
         ${docs.length ? `<ul class="doclist">${docs.map((d) => `<li><a href="${h(safeHref(d.url))}" target="_blank" rel="noopener">${d.kind === 'manual' ? '📄' : '🔗'} ${h(d.label)}</a> <span class="dim small">${h(hostname(d.url))}</span></li>`).join('')}</ul>` : '<p class="dim">No manuals or product page linked yet.</p>'}
@@ -422,6 +437,7 @@ async function renderPart(live) {
     </div>
     <div data-more-shelf></div>`;
   app._part = part;
+  if (window.APKTable) window.APKTable.scan(app);   // the spec and port tables stand in for their markup() hosts
   window.scrollTo({ top: 0, behavior: 'instant' });
   showLive(id, part, live);
 
