@@ -97,10 +97,29 @@ async function render() {
     else if (state.view === 'makers') await renderMakers(live);
     else await renderHome(live);
   } catch (err) {
-    if (live()) app.innerHTML = errorBlock(err);
+    if (live()) showError(err);
   } finally {
     if (live()) app.removeAttribute('aria-busy');
   }
+}
+
+const SDK = window.APKSoftapp;
+const POINT_IT = 'Open the store with ?api=http://127.0.0.1:8150/api/bim to point it at a hand-run DATABASE.server.BIM.';
+
+/** A failure as what happened / why / do this, in `into` (default: the page), with Retry where a retry can help. */
+function problemCard(err, { into, subject, onRetry, fix = [] } = {}) {
+  if (!SDK) return false;
+  // explain() names the code; problem() is what carries our own first steps.
+  const e = SDK.explain(err, { subject });
+  SDK.showProblem(SDK.problem(e.code, { detail: e.detail, subject, fix }), { into, onRetry });
+  return true;
+}
+
+function showError(err) {
+  const slot = document.createElement('section');
+  slot.className = 'notice dead';
+  app.replaceChildren(slot);
+  if (!problemCard(err, { into: slot, subject: `Library ${api.base}`, onRetry: render, fix: [POINT_IT] })) app.innerHTML = errorBlock(err);
 }
 
 function errorBlock(err) {
@@ -488,7 +507,7 @@ function onInput(e) {
       const more = block.querySelector('[data-more]');
       const newMore = tmp.querySelector('[data-more]');
       if (more && !newMore) more.remove();
-    });
+    }).catch((err) => problemCard(err, { subject: 'Facet search', fix: [POINT_IT] }));
   }, 120);
 }
 
@@ -523,14 +542,17 @@ function editJson(part) {
   dlg.querySelector('[data-dlg-save]').onclick = async (e) => {
     e.preventDefault();
     let body;
-    try { body = JSON.parse(area.value); } catch (err) { msg.textContent = `Not JSON: ${err.message}`; return; }
+    try { body = JSON.parse(area.value); } catch (err) {
+      if (!problemCard(err, { into: msg, subject: 'Part JSON', fix: ['Fix the JSON in the box (the detail says where it broke), then Save again.'] })) msg.textContent = `Not JSON: ${err.message}`;
+      return;
+    }
     msg.textContent = 'Saving…';
     try {
       await api.save(part.id, body);
       dlg.close();
       render();
     } catch (err) {
-      msg.textContent = err.message;
+      if (!problemCard(err, { into: msg, subject: part.name || part.id })) msg.textContent = err.message;
     }
   };
   dlg.querySelector('[data-dlg-cancel]').onclick = (e) => { e.preventDefault(); dlg.close(); };
@@ -543,11 +565,37 @@ async function deletePart(part) {
     await api.remove(part.id);
     go({ view: 'maker', maker: part.maker, filters: emptyFilters() });
   } catch (err) {
-    manageMsg(err.message, 'dead');
+    const slot = app.querySelector('[data-manage-msg]');
+    if (!slot || !problemCard(err, { into: slot, subject: part.name || part.id, onRetry: () => deletePart(part) })) manageMsg(err.message, 'dead');
   }
 }
 
 boot();
+
+SDK?.describe({
+  name: 'BIM Store',
+  does: 'A store-front over the shared BIM device library: browse departments, makers and the faceted catalogue, open a part, download it, or fix its JSON.',
+  inputs: [
+    { name: 'BIM library (stats, facets, parts, makers)', from: `${api.base} — DATABASE.server.BIM; ?api=<url> points it elsewhere`, kind: 'http' },
+    { name: 'Bench devices that are this part', from: `${api.base}/parts/<id>/live via ${api.base}/ui/picker.js`, kind: 'http' },
+    { name: 'Search text and filters', from: 'the search box, facet checkboxes, sort and the URL hash (every view is a link)' },
+  ],
+  outputs: [
+    { name: 'IFC4 / BIM JSON / panel SVG downloads', to: 'a file in your Downloads folder', kind: 'file' },
+    { name: 'Edited part', to: `PUT ${api.base}/parts/<maker>/<model> (needs the bench credential)`, kind: 'http' },
+    { name: 'Deleted part', to: `DELETE ${api.base}/parts/<maker>/<model>`, kind: 'http' },
+    { name: 'Open its panel', to: 'the OS shell console for a live bench device (inside the OS only)' },
+  ],
+  controls: [
+    { name: 'Search', how: 'type in the top bar and press Enter' },
+    { name: 'Departments / Catalogue / Makers', how: 'top navigation; Back walks the views' },
+    { name: 'Facets, sort, grid/list, pages', how: 'the catalogue rail and toolbar; chips remove a filter, Clear removes all' },
+    { name: 'Download IFC / JSON / Panel SVG', how: 'buttons on a part page' },
+    { name: '{ } Edit JSON', how: 'part page: edit the part and Save to library' },
+    { name: 'Delete part', how: 'part page: asks first, removes it for every tool' },
+  ],
+  problems: ['fetch_failed', 'http_not_found', 'http_forbidden', 'http_server_error', 'bad_json', 'bad_input', 'save_failed'],
+});
 
 /* ON THE BENCH — connected, discovered, known: go for its default GUI.
    The library knows which bench devices are this part and which panel each

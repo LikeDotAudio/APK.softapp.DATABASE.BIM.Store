@@ -7,11 +7,22 @@
 import { describeError, partUrl } from './logic.js';
 
 export class ApiError extends Error {
-  constructor(status, message, body) {
+  constructor(status, message, body, method = 'GET') {
     super(message);
     this.status = status;
     this.body = body;
+    this.code = problemCode(status, method); // a contracts/problems code: APKSoftapp.showProblem reads it
   }
+}
+
+/** The status, as a code in the shared problems catalogue (wire constants only). */
+export function problemCode(status, method = 'GET') {
+  if (status === 0) return 'fetch_failed';
+  if (status === 401 || status === 403) return 'http_forbidden';
+  if (status === 404 || status === 410) return 'http_not_found';
+  if (status === 408 || status === 504) return 'timeout';
+  if (status >= 500) return method === 'GET' ? 'http_server_error' : 'save_failed';
+  return 'bad_input';
 }
 
 export function createApi(base, fetchImpl = globalThis.fetch.bind(globalThis)) {
@@ -28,12 +39,12 @@ export function createApi(base, fetchImpl = globalThis.fetch.bind(globalThis)) {
         credentials: 'same-origin',
       });
     } catch {
-      throw new ApiError(0, describeError(0, null, method), null);
+      throw new ApiError(0, describeError(0, null, method), null, method);
     }
     let data = null;
     const text = await res.text();
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-    if (!res.ok) throw new ApiError(res.status, describeError(res.status, data, method), data);
+    if (!res.ok) throw new ApiError(res.status, describeError(res.status, data, method), data, method);
     return data;
   }
 
