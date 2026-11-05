@@ -50,3 +50,9 @@ a status code. Port and panel editing belongs in the Device Editor, which the pr
 
 ## 📚 Wiki
 Principles, architecture and delivery: [Documentation/README.md](Documentation/README.md).
+
+## On the bench — the device's own panel
+
+A product page whose part has devices on the bench lists them (online, gone dark) from
+`/api/bim/parts/<id>/live`, each with **▶ Open its panel**: the default GUI the device presents on the bus,
+opened in the OS shell through the shared picker module's `openDefaultGui`. Outside the OS it names the panel.
