@@ -1,6 +1,6 @@
 {
   "name": "database-bim-store",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "BIM Store Softapp on APK.audio — a web-store browser over the DATABASE.server.BIM device library",
   "type": "module",
   "private": true,
