@@ -48,3 +48,19 @@ test('saving clears the read cache so the page shows the saved part', async () =
   assert.deepEqual(calls.map((c) => c[0]), ['GET', 'PUT', 'GET']);
   assert.equal(calls[1][2], JSON.stringify({ id: 'a/b', model: 'B' }));
 });
+
+test('Save Model\'s .ifc: the part\'s stored twin as STEP text, never cached; a missing part is http_not_found', async () => {
+  const calls = [];
+  const step = 'ISO-10303-21;\nHEADER;\nENDSEC;\nDATA;\nENDSEC;\nEND-ISO-10303-21;\n';
+  const fetchImpl = async (url, init) => {
+    calls.push([init.method, url, init.headers.Accept]);
+    if (url === '/api/bim/parts/a/b.ifc') return { ok: true, status: 200, text: async () => step };
+    return { ok: false, status: 404, text: async () => '{"error":"no such part"}' };
+  };
+  const api = createApi('/api/bim', fetchImpl);
+  assert.equal(await api.ifc('a/b'), step);
+  assert.equal(await api.ifc('a/b'), step);
+  assert.deepEqual(calls[0], ['GET', '/api/bim/parts/a/b.ifc', 'model/step']);
+  assert.equal(calls.length, 2, 'not cached: a part saved a moment ago is the one written');
+  await assert.rejects(api.ifc('a/zz'), (err) => err instanceof ApiError && err.status === 404 && err.code === 'http_not_found');
+});

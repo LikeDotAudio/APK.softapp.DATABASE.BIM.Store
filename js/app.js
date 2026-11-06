@@ -399,7 +399,8 @@ async function renderPart(live) {
         ${facts.length ? `<dl class="facts">${facts.map(([k, v]) => `<div><dt>${h(k)}</dt><dd>${h(v)}</dd></div>`).join('')}</dl>` : ''}
         <div class="live" data-live hidden></div>
         <div class="actions">
-          <a class="btn primary" href="${h(api.url(id, '.ifc'))}" data-download="${h(id.replace('/', '_'))}.ifc">⬇ Download IFC</a>
+          <button class="btn primary" data-save-model title="Save Model: the part's IFC type library (.ifc) and its BIM JSON, both or neither">⬇ Save Model (.ifc + .json)</button>
+          <a class="btn" href="${h(api.url(id, '.ifc'))}" data-download="${h(id.replace('/', '_'))}.ifc">⬇ Download IFC</a>
           <a class="btn" href="${h(api.url(id, '.json'))}" data-download="${h(id.replace('/', '_'))}.bim.json">⬇ Download JSON</a>
           <a class="btn" href="${h(api.url(id, '.svg'))}" data-download="${h(id.replace('/', '_'))}.svg">⬇ Panel SVG</a>
           <a class="btn" href="${h(editorUrl(id))}">✎ Edit in Device Editor</a>
@@ -489,6 +490,8 @@ function onClick(e) {
   } else if (t.matches('[data-download]')) {
     e.preventDefault();
     download(t.href, t.dataset.download);
+  } else if (t.matches('[data-save-model]')) {
+    savePartModel(app._part);
   } else if (t.matches('[data-edit-json]')) {
     editJson(app._part);
   } else if (t.matches('[data-delete]')) {
@@ -539,6 +542,16 @@ async function download(url, filename) {
   } catch {
     window.open(url, '_blank', 'noopener');
   }
+}
+
+/* Save Model (APKSoftapp.saveModel, ROAD-3583): the part's IFC type library — the .ifc twin the server
+   keeps beside its .bim.json (bim/twin.py) — AND the part's JSON, into one folder or as two downloads. */
+async function savePartModel(part) {
+  const id = part.id;
+  const stem = id.replace('/', '_');
+  if (!SDK?.saveModel) { download(api.url(id, '.ifc'), `${stem}.ifc`); return; }
+  const r = await SDK.saveModel(part, { name: stem, toIfc: () => api.ifc(id) });
+  if (!r.ok && !r.cancelled) SDK.showProblem(r.problem || 'save_failed', { onRetry: () => savePartModel(part) });
 }
 
 // ---- writes -------------------------------------------------------------------
@@ -597,6 +610,7 @@ SDK?.describe({
     { name: 'Search text and filters', from: 'the search box, facet checkboxes, sort and the URL hash (every view is a link)' },
   ],
   outputs: [
+    { name: 'Part model', to: 'Save Model: <maker>_<model>.ifc (the part as an IFC4X3 type library, the server\'s twin) AND <maker>_<model>.json, into a folder you pick, else two downloads', kind: 'file' },
     { name: 'IFC4 / BIM JSON / panel SVG downloads', to: 'a file in your Downloads folder', kind: 'file' },
     { name: 'Edited part', to: `PUT ${api.base}/parts/<maker>/<model> (needs the bench credential)`, kind: 'http' },
     { name: 'Deleted part', to: `DELETE ${api.base}/parts/<maker>/<model>`, kind: 'http' },
@@ -606,7 +620,7 @@ SDK?.describe({
     { name: 'Search', how: 'type in the top bar and press Enter' },
     { name: 'Departments / Catalogue / Makers', how: 'top navigation; Back walks the views' },
     { name: 'Facets, sort, grid/list, pages', how: 'the catalogue rail and toolbar; chips remove a filter, Clear removes all' },
-    { name: 'Download IFC / JSON / Panel SVG', how: 'buttons on a part page' },
+    { name: 'Save Model / Download IFC / JSON / Panel SVG', how: 'buttons on a part page' },
     { name: '{ } Edit JSON', how: 'part page: edit the part and Save to library' },
     { name: 'Delete part', how: 'part page: asks first, removes it for every tool' },
   ],

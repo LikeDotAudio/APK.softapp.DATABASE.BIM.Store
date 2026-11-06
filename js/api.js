@@ -78,5 +78,18 @@ export function createApi(base, fetchImpl = globalThis.fetch.bind(globalThis)) {
       return out;
     },
     url: (id, ext) => partUrl(base, id, ext),
+    /** The part as the server's IFC type library (its stored .ifc twin, ISO 10303-21 text), never cached. */
+    async ifc(id) {
+      const url = partUrl(base, id, '.ifc');
+      let res;
+      try {
+        res = await fetchImpl(url, { method: 'GET', headers: { Accept: 'model/step' }, credentials: 'same-origin' });
+      } catch {
+        throw new ApiError(0, describeError(0, null, 'GET'), null, 'GET');
+      }
+      const text = await res.text();
+      if (!res.ok) throw new ApiError(res.status, describeError(res.status, null, 'GET'), text, 'GET');
+      return text;
+    },
   };
 }
