@@ -13,6 +13,7 @@ import {
   editorUrl, escapeHtml as h, fmtNum, fmtUnit, ruLabel, pageCount, pageWindow, rangeLabel,
   departmentIcon, STAGE_LABELS } from './logic.js';
 import { createApi } from './api.js';
+import { loadLibrary } from './bimLibrary.js';
 
 const app = document.getElementById('app');
 const searchForm = document.getElementById('site-search');
@@ -592,7 +593,7 @@ SDK?.describe({
   does: 'A store-front over the shared BIM device library: browse departments, makers and the faceted catalogue, open a part, download it, or fix its JSON.',
   inputs: [
     { name: 'BIM library (stats, facets, parts, makers)', from: `${api.base} — DATABASE.server.BIM; ?api=<url> points it elsewhere`, kind: 'http' },
-    { name: 'Bench devices that are this part', from: `${api.base}/parts/<id>/live via ${api.base}/ui/picker.js`, kind: 'http' },
+    { name: 'Bench devices that are this part', from: `${api.base}/parts/<id>/live via the BIM library picker (APKLibrary.liveDevices)`, kind: 'http' },
     { name: 'Search text and filters', from: 'the search box, facet checkboxes, sort and the URL hash (every view is a link)' },
   ],
   outputs: [
@@ -615,13 +616,13 @@ SDK?.describe({
 /* ON THE BENCH — connected, discovered, known: go for its default GUI.
    The library knows which bench devices are this part and which panel each
    presents on the bus (/api/bim/parts/<id>/live); "Open its panel" asks the OS
-   shell for that device's console through the shared picker module. */
+   shell for that device's console through the one picker (APKLibrary, ROAD-3596). */
 async function showLive(id, part, live) {
   let devices = [];
   let lib = null;
   try {
-    lib = await import(`${api.base}/ui/picker.js`);
-    devices = await lib.liveDevices(id);
+    lib = await loadLibrary();
+    devices = await lib.liveDevices(id, api.base);
   } catch (_) { return; }
   if (!live() || !devices.length) return;
   const box = app.querySelector('[data-live]');
