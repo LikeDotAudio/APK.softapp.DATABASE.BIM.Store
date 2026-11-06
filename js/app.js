@@ -11,8 +11,7 @@ import {
   toggleFilter, activeChips, removeChip, emptyFilters, resolveApiBase, cardImage, cardFacts,
   specSections, groupPorts, portTotal, documentLinks, galleryImages, portalLinks, safeHref,
   editorUrl, escapeHtml as h, fmtNum, fmtUnit, ruLabel, pageCount, pageWindow, rangeLabel,
-  departmentIcon,
-} from './logic.js';
+  departmentIcon, STAGE_LABELS } from './logic.js';
 import { createApi } from './api.js';
 
 const app = document.getElementById('app');
@@ -250,7 +249,7 @@ async function renderCatalog(live, makerSlug = null) {
   ]);
   if (!live()) return;
   for (const row of facets.maker || []) makerNames[row.value] = row.label || row.value;
-  const labels = { maker: makerNames, stage: { stub: 'Stubs', declared: 'Fully described' } };
+  const labels = { maker: makerNames, stage: STAGE_LABELS };
   const chips = activeChips(state.view === 'maker' ? { ...state.filters, maker: [] } : state.filters, labels);
   const pages = pageCount(page.total, PAGE_SIZE);
   const header = makerSlug ? makerHeader(makerSlug, maker, page.total) : catalogHeader();
@@ -516,7 +515,7 @@ function onInput(e) {
     const block = app.querySelector(`[data-facet="${key}"]`);
     if (!f || !block) return;
     api.facets(facetsQuery(state)).then((facets) => {
-      const labels = { maker: makerNames, stage: { stub: 'Stubs', declared: 'Fully described' } };
+      const labels = { maker: makerNames, stage: STAGE_LABELS };
       const tmp = document.createElement('div');
       tmp.innerHTML = facetBlock(f, facets[key] || [], labels);
       block.querySelector('.opts').replaceWith(tmp.querySelector('.opts'));

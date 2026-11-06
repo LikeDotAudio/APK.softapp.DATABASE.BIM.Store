@@ -257,6 +257,14 @@ export function ruLabel(ru) {
   return s ? `${s}U` : '';
 }
 
+/** The stages as the Store says them. "seeded": described only by the AI-enriched Symbols
+ *  corpus (DATABASE.server.BIM part.seeded), so it is shown as unverified (ROAD-3564). */
+export const STAGE_LABELS = { stub: 'Stubs', declared: 'Fully described', seeded: '🌱 seeded — unverified' };
+
+export function isSeeded(summary) {
+  return (summary && summary.stage) === 'seeded';
+}
+
 export function isStub(summary) {
   return (summary && summary.stage) === 'stub';
 }
@@ -268,6 +276,7 @@ export function cardFacts(summary) {
   if (s.rack_units) badges.push({ kind: 'ru', text: ruLabel(s.rack_units) });
   if (s.port_count) badges.push({ kind: 'ports', text: `${fmtNum(s.port_count, 0)} port${s.port_count === 1 ? '' : 's'}` });
   if (isStub(s)) badges.push({ kind: 'stub', text: 'stub' });
+  if (isSeeded(s)) badges.push({ kind: 'seeded', text: '🌱 seeded — unverified' });
   return {
     title: s.model || s.name || s.id || '',
     maker: s.manufacturer || s.maker || '',
@@ -290,7 +299,8 @@ export function specSections(part) {
     ['Part number', p.part_number],
     ['Department', p.category],
     ['Class', p.class],
-    ['Data', p.stage === 'stub' ? 'stub — name only, no measurements yet' : (p.stage === 'declared' ? 'fully described' : p.stage)],
+    ['Data', p.stage === 'stub' ? 'stub — name only, no measurements yet' : (p.stage === 'declared' ? 'fully described'
+      : (p.stage === 'seeded' ? '🌱 seeded — unverified: filled from the AI-enriched Symbols corpus, not the maker' : p.stage))],
   ];
   sections.push({ section: 'Identity', rows: ident.filter(([, v]) => v) });
   const physical = [
