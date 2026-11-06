@@ -203,3 +203,8 @@ test('errors read as sentences; a refused write names the bench credential', () 
   assert.equal(describeError(404, { error: 'no part a/b' }), 'no part a/b');
   assert.equal(describeError(500, null), 'The library answered 500.');
 });
+
+test('the Concepts department has its own tile glyph', async () => {
+  const { departmentIcon } = await import('../js/logic.js');
+  assert.equal(departmentIcon('Concepts'), '💡');
+});

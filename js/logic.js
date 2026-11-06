@@ -30,7 +30,7 @@ export const VIEWS = ['home', 'catalog', 'part', 'maker', 'makers'];
 /** A department's tile glyph. A department the table does not name still gets one. */
 const DEPARTMENT_ICON = {
   Audio: '🎛️', Microphones: '🎙️', Video: '🎬', Network: '🌐', Control: '🕹️', Power: '🔌',
-  Infrastructure: '🗄️', 'Test & Measurement': '📈', Computing: '💻', Accessories: '🧰', Other: '📦',
+  Infrastructure: '🗄️', 'Test & Measurement': '📈', Computing: '💻', Accessories: '🧰', Concepts: '💡', Other: '📦',
 };
 export function departmentIcon(category) {
   return DEPARTMENT_ICON[category] || '📦';
